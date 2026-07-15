@@ -1,0 +1,25 @@
+{
+  "name": "despachafacil",
+  "version": "1.0.0",
+  "description": "Plataforma SaaS para Despachantes",
+  "homepage": "https://github.com/IgorAntunes66/DespachaFacil#readme",
+  "bugs": {
+    "url": "https://github.com/IgorAntunes66/DespachaFacil/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IgorAntunes66/DespachaFacil.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev"
+  },
+  "dependencies": {
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
+}
