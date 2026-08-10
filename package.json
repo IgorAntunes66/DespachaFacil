@@ -15,14 +15,19 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run services:up && next dev",
+    "services:up": "docker compose -f infra/compose.yaml up -d",
+    "services:down": "docker compose -f infra/compose.yaml down",
     "lint:prettier:check": "prettier . --check",
     "lint:prettier:fix": "prettier . --write",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
+    "dotenv-expand": "^1000.0.0",
     "next": "^16.2.10",
+    "pg": "^8.23.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
