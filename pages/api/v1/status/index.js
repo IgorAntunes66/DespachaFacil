@@ -1,3 +1,29 @@
-export default function status(request, response) {
-  response.status(200).json({});
+import database from "infra/database";
+
+export default async function status(request, response) {
+  const updatedAt = new Date().toISOString();
+
+  const versionResult = await database.query("SHOW server_version;");
+  const versionValue = versionResult.rows[0].server_version;
+
+  const maxConnectionResult = await database.query("SHOW max_connections;");
+  const maxConnectionValue = maxConnectionResult.rows[0].max_connections;
+
+  const databaseName = process.env.POSTGRES_DB;
+  const openedConnectionsResult = await database.query({
+    text: "SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;",
+    values: [databaseName],
+  });
+  const openedConnectionsValue = openedConnectionsResult.rows[0].count;
+
+  response.status(200).json({
+    updated_at: updatedAt,
+    dependencies: {
+      database: {
+        version: versionValue,
+        max_connections: parseInt(maxConnectionValue),
+        opened_connections: openedConnectionsValue,
+      },
+    },
+  });
 }
