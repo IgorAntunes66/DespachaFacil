@@ -5,6 +5,7 @@ export default async function status(request, response) {
 
   const versionResult = await database.query("SHOW server_version;");
   const versionValue = versionResult.rows[0].server_version;
+  const formatedVersionValue = versionValue.slice(0, 2);
 
   const maxConnectionResult = await database.query("SHOW max_connections;");
   const maxConnectionValue = maxConnectionResult.rows[0].max_connections;
@@ -20,7 +21,7 @@ export default async function status(request, response) {
     updated_at: updatedAt,
     dependencies: {
       database: {
-        version: versionValue,
+        version: formatedVersionValue,
         max_connections: parseInt(maxConnectionValue),
         opened_connections: openedConnectionsValue,
       },
