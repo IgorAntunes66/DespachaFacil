@@ -25,16 +25,18 @@ async function getNewClient() {
   return client;
 }
 
+const database = {
+  query,
+  getNewClient,
+};
+
+export default database;
+
 function getSSLValues() {
   if (process.env.POSTGRES_CA) {
     return {
-      ca: POSTGRES_CA,
+      ca: process.env.POSTGRES_CA,
     };
   }
   return process.env.NODE_ENV === "production" ? true : false;
 }
-
-export default {
-  query,
-  getNewClient,
-};
