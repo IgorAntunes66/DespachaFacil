@@ -28,7 +28,7 @@ async function getNewClient() {
 function getSSLValues() {
   if (process.env.POSTGRES_CA) {
     return {
-      ca: POSTGRES_CA,
+      ca: process.env.POSTGRES_CA,
     };
   }
   return process.env.NODE_ENV === "production" ? true : false;
