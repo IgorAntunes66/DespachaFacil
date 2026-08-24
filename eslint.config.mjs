@@ -50,7 +50,7 @@ export default tseslint.config(
   },
 
   {
-    ignores: [".next/", "node_modules/", "dist/", "infra/migrations"],
+    ignores: [".next/", "node_modules/", "dist/"],
   },
 
   // 4. Equivale ao "prettier" da sua imagem (DEVE ser sempre o último da lista)
