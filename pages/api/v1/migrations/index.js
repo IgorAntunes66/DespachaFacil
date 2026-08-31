@@ -16,11 +16,12 @@ export default async function migrations(request, response) {
     const defaultMigrationsOptions = {
       dbClient: dbClient,
       dryRun: true,
-      dir: join("infra", "migrations"),
+      dir: join(process.cwd(), "infra", "migrations"),
       direction: "up",
       verbose: true,
       migrationsTable: "pgmigrations",
     };
+    console.log("DIRETORIO", defaultMigrationsOptions.dir);
 
     if (request.method === "GET") {
       const pendingMigrations = await migrationRunner({
