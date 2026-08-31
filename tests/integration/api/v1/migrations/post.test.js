@@ -1,33 +1,41 @@
-import database from "infra/database";
 import orchestrator from "tests/orchestrator";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
-  await cleanDatabase();
+  await orchestrator.clearDatabase();
 });
 
-async function cleanDatabase() {
-  await database.query("drop schema public cascade; create schema public");
-}
+describe("POST /API/v1/migrations", () => {
+  describe("Anonymous user", () => {
+    describe("running pending migrations", () => {
+      test("For the first time", async () => {
+        const response1 = await fetch(
+          "http://localhost:3000/api/v1/migrations",
+          {
+            method: "POST",
+          },
+        );
 
-test("POST to /api/v1/migrations should return 200", async () => {
-  const response1 = await fetch("http://localhost:3000/api/v1/migrations", {
-    method: "POST",
+        expect(response1.status).toBe(201);
+
+        const responseBody1 = await response1.json();
+
+        expect(Array.isArray(responseBody1)).toBe(true);
+        expect(responseBody1.length).toBeGreaterThan(0);
+      });
+      test("For the second time", async () => {
+        const response2 = await fetch(
+          "http://localhost:3000/api/v1/migrations",
+          {
+            method: "POST",
+          },
+        );
+        const responseBody2 = await response2.json();
+
+        expect(responseBody2.length).toBe(0);
+        expect(response2.status).toBe(200);
+        expect(Array.isArray(responseBody2)).toBe(true);
+      });
+    });
   });
-
-  expect(response1.status).toBe(201);
-
-  const responseBody1 = await response1.json();
-
-  expect(Array.isArray(responseBody1)).toBe(true);
-  expect(responseBody1.length).toBeGreaterThan(0);
-
-  const response2 = await fetch("http://localhost:3000/api/v1/migrations", {
-    method: "POST",
-  });
-  const responseBody2 = await response2.json();
-
-  expect(responseBody2.length).toBe(0);
-  expect(response2.status).toBe(200);
-  expect(Array.isArray(responseBody2)).toBe(true);
 });
