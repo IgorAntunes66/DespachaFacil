@@ -15,7 +15,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run services:up && npm run services:wait:database && npm run migrations:up && next dev",
+    "dev": "node infra/scripts/send-exit-code0.js",
+    "dev:exit": "npm run services:up && npm run services:wait:database && npm run migrations:up && next dev",
+    "postdev": "npm run services:stop",
     "test": "npm run services:up && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand --verbose\"",
     "posttest": "npm run services:stop",
     "test:watch": "jest --watchAll --runInBand --verbose",
