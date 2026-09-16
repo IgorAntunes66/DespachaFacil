@@ -1,30 +1,40 @@
 import database from "infra/database";
+import { InternalServerError } from "infra/errors";
 
 export default async function status(request, response) {
-  const updatedAt = new Date().toISOString();
+  try {
+    const updatedAt = new Date().toISOString();
 
-  const versionResult = await database.query("SHOW server_version;");
-  const versionValue = versionResult.rows[0].server_version;
-  const formatedVersionValue = versionValue.slice(0, 2);
+    const versionResult = await database.query("SHOW server_version;");
+    const versionValue = versionResult.rows[0].server_version;
+    const formatedVersionValue = versionValue.slice(0, 2);
 
-  const maxConnectionResult = await database.query("SHOW max_connections;");
-  const maxConnectionValue = maxConnectionResult.rows[0].max_connections;
+    const maxConnectionResult = await database.query("SHOW max_connections;");
+    const maxConnectionValue = maxConnectionResult.rows[0].max_connections;
 
-  const databaseName = process.env.POSTGRES_DB;
-  const openedConnectionsResult = await database.query({
-    text: "SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;",
-    values: [databaseName],
-  });
-  const openedConnectionsValue = openedConnectionsResult.rows[0].count;
+    const databaseName = process.env.POSTGRES_DB;
+    const openedConnectionsResult = await database.query({
+      text: "SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;",
+      values: [databaseName],
+    });
+    const openedConnectionsValue = openedConnectionsResult.rows[0].count;
 
-  response.status(200).json({
-    updated_at: updatedAt,
-    dependencies: {
-      database: {
-        version: formatedVersionValue,
-        max_connections: parseInt(maxConnectionValue),
-        opened_connections: openedConnectionsValue,
+    response.status(200).json({
+      updated_at: updatedAt,
+      dependencies: {
+        database: {
+          version: formatedVersionValue,
+          max_connections: parseInt(maxConnectionValue),
+          opened_connections: openedConnectionsValue,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    const publicErrorObject = new InternalServerError({
+      cause: error,
+    });
+    console.log("\nErro dentro do catch do controller status");
+    console.log(error);
+    response.status(500).json(publicErrorObject);
+  }
 }
