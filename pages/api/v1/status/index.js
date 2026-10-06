@@ -1,40 +1,20 @@
-import database from "infra/database";
-import { InternalServerError } from "infra/errors";
+import { createRouter } from "next-connect";
+import controller from "infra/controller";
+import statusModel from "models/status";
 
-export default async function status(request, response) {
-  try {
-    const updatedAt = new Date().toISOString();
+const router = createRouter();
 
-    const versionResult = await database.query("SHOW server_version;");
-    const versionValue = versionResult.rows[0].server_version;
-    const formatedVersionValue = versionValue.slice(0, 2);
+router.get(getHandler);
 
-    const maxConnectionResult = await database.query("SHOW max_connections;");
-    const maxConnectionValue = maxConnectionResult.rows[0].max_connections;
+export default router.handler({
+  onError: controller.errorHandlers.onError,
+  onNoMatch(request, response) {
+    response.setHeader("Allow", "GET, HEAD");
+    return controller.errorHandlers.onNoMatch(request, response);
+  },
+});
 
-    const databaseName = process.env.POSTGRES_DB;
-    const openedConnectionsResult = await database.query({
-      text: "SELECT count(*)::int FROM pg_stat_activity WHERE datname = $1;",
-      values: [databaseName],
-    });
-    const openedConnectionsValue = openedConnectionsResult.rows[0].count;
-
-    response.status(200).json({
-      updated_at: updatedAt,
-      dependencies: {
-        database: {
-          version: formatedVersionValue,
-          max_connections: parseInt(maxConnectionValue),
-          opened_connections: openedConnectionsValue,
-        },
-      },
-    });
-  } catch (error) {
-    const publicErrorObject = new InternalServerError({
-      cause: error,
-    });
-    console.log("\nErro dentro do catch do controller status");
-    console.log(error);
-    response.status(500).json(publicErrorObject);
-  }
+async function getHandler(request, response) {
+  const result = await statusModel.getStatus();
+  return response.status(200).json(result);
 }
