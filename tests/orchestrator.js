@@ -1,8 +1,9 @@
 import retry from "async-retry";
 import database from "infra/database";
+import email from "infra/email";
 
 async function waitForAllServices() {
-  await waitForWebServer();
+  await Promise.all([waitForWebServer(), waitForMailServer()]);
 
   async function waitForWebServer() {
     return retry(fetchStatusPage, {
@@ -19,6 +20,67 @@ async function waitForAllServices() {
   }
 }
 
+async function waitForMailServer() {
+  return retry(
+    async () => {
+      await email.verifyConnection();
+      await getEmailMessages();
+    },
+    { retries: 20, minTimeout: 100, maxTimeout: 1000 },
+  );
+}
+
+async function getEmailMessages() {
+  const response = await fetch(`${process.env.EMAIL_HTTP_URL}/messages`, {
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) {
+    throw new Error(`MailCatcher returned status ${response.status}.`);
+  }
+  return response.json();
+}
+
+async function deleteAllEmails() {
+  const response = await fetch(`${process.env.EMAIL_HTTP_URL}/messages`, {
+    method: "DELETE",
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) {
+    throw new Error(`MailCatcher returned status ${response.status}.`);
+  }
+}
+
+async function getLastEmail() {
+  return retry(
+    async () => {
+      const messages = await getEmailMessages();
+      const message = messages.at(-1);
+      if (!message) {
+        throw new Error("No email has arrived yet.");
+      }
+
+      const text = await getEmailContent(message.id, "plain");
+      const html = await getEmailContent(message.id, "html");
+      return { ...message, text, html };
+    },
+    { retries: 10, minTimeout: 100, maxTimeout: 500 },
+  );
+}
+
+async function getEmailContent(id, format) {
+  const response = await fetch(
+    `${process.env.EMAIL_HTTP_URL}/messages/${id}.${format}`,
+    { signal: AbortSignal.timeout(5000) },
+  );
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`MailCatcher returned status ${response.status}.`);
+  }
+  return response.text();
+}
+
 async function clearDatabase() {
   await database.query("drop schema public cascade; create schema public");
 }
@@ -26,6 +88,9 @@ async function clearDatabase() {
 const orchestrator = {
   waitForAllServices,
   clearDatabase,
+  waitForMailServer,
+  deleteAllEmails,
+  getLastEmail,
 };
 
 export default orchestrator;
