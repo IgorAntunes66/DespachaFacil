@@ -127,3 +127,53 @@ Acesse a aplicação em `http://localhost:3000`[cite: 20].
 ## 📄 Licença
 
 Este projeto está sob a licença definida no arquivo [LICENSE](LICENSE)[cite: 20].
+
+## E-mail em desenvolvimento
+
+O MailCatcher sobe junto com o PostgreSQL em `npm run services:up` e captura os
+e-mails enviados localmente. A caixa de entrada fica disponível em
+http://127.0.0.1:1080, e o servidor SMTP escuta na porta 1025. As duas portas são
+publicadas apenas na interface local da máquina.
+
+As configurações locais estão em `.env.development`:
+
+| Variável            | Uso                                                                |
+| ------------------- | ------------------------------------------------------------------ |
+| `EMAIL_SMTP_HOST`   | Endereço do servidor SMTP                                          |
+| `EMAIL_SMTP_PORT`   | Porta SMTP                                                         |
+| `EMAIL_SMTP_SECURE` | `true` para TLS desde o início da conexão, geralmente na porta 465 |
+| `EMAIL_FROM`        | Remetente das mensagens                                            |
+| `EMAIL_HTTP_URL`    | Endereço da interface/API do MailCatcher, usado nos testes         |
+
+Para um provedor real, configure também `EMAIL_SMTP_USER` e
+`EMAIL_SMTP_PASSWORD` no ambiente de implantação. Em produção, o módulo exige
+TLS: na porta 587, use `EMAIL_SMTP_SECURE=false` para a negociação STARTTLS;
+na porta 465, use `EMAIL_SMTP_SECURE=true`. Credenciais reais não devem ser
+salvas nos arquivos versionados.
+
+O módulo `infra/email.js` envia mensagens com texto e, opcionalmente, HTML:
+
+```javascript
+import email from "infra/email";
+
+await email.send({
+  to: "cliente@example.test",
+  subject: "Recebemos sua solicitação",
+  text: "Em breve nossa equipe entrará em contato.",
+  html: "<p>Em breve nossa equipe entrará em contato.</p>",
+});
+```
+
+O retorno confirma a aceitação pelo servidor SMTP, não a entrega na caixa de
+entrada do destinatário. Falhas são propagadas ao chamador. Não há reenvio
+automático nesta etapa.
+
+Os testes de integração em `tests/integration/infra/email.test.js` usam o
+orchestrator para aguardar SMTP e HTTP, limpar a caixa no início da suíte e
+consultar a última mensagem com texto e HTML. Eles também exercitam uma falha SMTP.
+Execute a suíte com `npm test`; o encerramento dos serviços inclui o MailCatcher.
+
+Para inspecionar as mensagens após os testes, mantenha `npm run dev` em um
+terminal e execute `npm run test:watch` em outro. As mensagens permanecem
+disponíveis até a próxima execução da suíte de e-mail ou até o MailCatcher ser
+reiniciado, pois sua caixa de entrada é armazenada em memória.
